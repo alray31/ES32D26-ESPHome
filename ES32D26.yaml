@@ -56,16 +56,16 @@ logger:
     component: DEBUG
 api:
   encryption:
-    key: "AFnE0Y6mZJYZaofSjAAgCEAq72m8LvTA86FeRJ43gGQ="
+    key: !secret api_key
 ota:
   - platform: esphome
-    password: "1997df8a4bb352d2feadf41cc11ddfa5"
+    password: !secret ota_password
 wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
   ap:
-    ssid: "Test-Board Fallback Hotspot"
-    password: "bZiogVxpPvs1"
+    ssid: "ES32D26 Fallback Hotspot"
+    password: !secret ap_password
 captive_portal:
 
 ######################
