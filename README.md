@@ -12,6 +12,7 @@
 - [Sorties analogiques](#sorties-analogiques)
 - [Entrées analogiques](#entrées-analogiques)
 - [RS485 / Modbus](#rs485--modbus)
+- [Broches GPIO libres](#broches-gpio-libres)
 - [Diagnostics WiFi](#diagnostics-wifi)
 - [Sécurité et secrets](#sécurité-et-secrets)
 - [Problèmes connus et travaux en cours](#problèmes-connus-et-travaux-en-cours)
@@ -25,6 +26,7 @@ Ce dépôt contient un firmware [ESPHome](https://esphome.io/) développé pour 
 - 2 sorties analogiques (tension 0-10V ou courant 0-20mA, selon la position d'un DIP switch)
 - 4 entrées analogiques en tension et 4 en courant
 - Un port de communication RS485
+- Plusieurs broches GPIO du module ESP32 amenées à un bornier libre, sans fonction prédéfinie, permettant d'ajouter des fonctions supplémentaires
 
 Le firmware exposé ici pilote l'ensemble de ces fonctions via ESPHome, avec une attention particulière portée à ce que les réglages courants (modes de fonctionnement, calibration, comportement au démarrage) soient ajustables directement depuis l'interface Home Assistant, sans nécessiter de modification ou de re-flashage du firmware.
 
@@ -149,6 +151,28 @@ Un indicateur de diagnostic ("RS485 Prêt") confirme que le port s'est initialis
 **Note technique** : GPIO1 et GPIO3 étant les broches UART matérielles par défaut du ESP32 (également utilisées pour la programmation/console série par USB), la sortie des journaux (logs) par UART matériel a été désactivée (`logger: baud_rate: 0`) afin d'éviter tout conflit. Les journaux restent disponibles via WiFi/API, comme c'est l'usage courant avec ESPHome.
 
 Seule l'infrastructure de base (UART + trame Modbus) est préparée à ce stade. La configuration des registres spécifiques à un appareil Modbus donné (adresse, type de donnée, échelle) devra être ajoutée au moment de connecter un appareil réel — chaque appareil Modbus RTU a sa propre carte de registres, propre au fabricant, qu'il n'est pas possible de préparer à l'avance de façon générique.
+
+## Broches GPIO libres
+
+En plus des fonctions déjà câblées par la carte, plusieurs broches du module ESP32 sont amenées à un bornier libre sur la ES32D26, sans fonction prédéfinie : **GPIO4, GPIO5, GPIO16, GPIO17, GPIO18 et GPIO19**.
+
+Particularités à connaître pour chacune :
+
+| Broche | Particularité |
+|---|---|
+| GPIO4 | Seule broche du groupe capable de lecture analogique (ADC2, canal 0) — soumise à la même limitation WiFi/ADC2 que Vi1 et Vi3 (voir [Entrées analogiques](#entrées-analogiques)) si utilisée comme entrée analogique. |
+| GPIO5, GPIO18, GPIO19 | Correspondent par défaut au bus SPI matériel (VSPI) du ESP32, mais peuvent être réaffectées à d'autres fonctions grâce à la matrice de broches flexible du ESP32. |
+| GPIO16, GPIO17 | Broches généralistes, libres sur un module ESP32-WROOM standard — à éviter sur un module de variante WROVER, où elles sont réservées à la mémoire PSRAM embarquée. |
+
+### Exemples d'utilisation possible
+
+Ces broches n'ont aucune fonction prédéfinie par la carte ou par ce firmware — elles sont disponibles pour des ajouts futurs, par exemple :
+
+- **Bus I2C** (2 fils, SDA/SCL) pour ajouter un capteur externe (température/humidité, luminosité, etc.), ou un convertisseur analogique-numérique externe (comme un module ADS1115) afin de contourner entièrement la limitation ADC2/WiFi mentionnée pour Vi1 et Vi3.
+- **Sortie numérique additionnelle** : relais externe, indicateur lumineux, avertisseur sonore.
+- **Entrée numérique additionnelle** : bouton, interrupteur, capteur de proximité.
+- **Bus SPI** (via GPIO5/18/19) pour un périphérique externe, par exemple un écran ou un lecteur de carte SD.
+- **Port UART supplémentaire** (UART1 ou UART2 logiciel) si une seconde liaison série est nécessaire en parallèle du RS485.
 
 ## Diagnostics WiFi
 
