@@ -2,6 +2,10 @@
 
 > **Statut : travail en cours (work in progress).** Cette documentation reflète l'état actuel du projet et sera mise à jour au fur et à mesure de son évolution. Certaines fonctionnalités sont fonctionnelles et calibrées, d'autres sont encore en cours de validation ou de calibration (voir la section [Problèmes connus et travaux en cours](#problèmes-connus-et-travaux-en-cours)).
 
+
+<img width="1589" height="562" alt="image" src="https://github.com/user-attachments/assets/7f35dce3-5f30-4a95-bf0a-1eac4fda2eb0" />
+
+
 ## Table des matières
 
 - [Vue d'ensemble](#vue-densemble)
@@ -30,6 +34,10 @@ Ce dépôt contient un firmware [ESPHome](https://esphome.io/) développé pour 
 
 Le firmware exposé ici pilote l'ensemble de ces fonctions via ESPHome, avec une attention particulière portée à ce que les réglages courants (modes de fonctionnement, calibration, comportement au démarrage) soient ajustables directement depuis l'interface Home Assistant, sans nécessiter de modification ou de re-flashage du firmware.
 
+<img width="528" height="521" alt="image" src="https://github.com/user-attachments/assets/381d6600-2a03-4351-bc5d-812b034de6bc" />
+
+
+
 ## Prérequis matériel
 
 Le socket de la ES32D26 est conçu pour recevoir un module ESP32 au format **DevKit à 38 broches**. Ceci est une exigence stricte :
@@ -38,6 +46,11 @@ Le socket de la ES32D26 est conçu pour recevoir un module ESP32 au format **Dev
 - La ES32D26 accepte deux espacements de broches entre les deux rangées : **0.9 pouce ou 1.0 pouce**, selon le modèle de module ESP32 DevKit utilisé — les deux sont pris en charge par le socket.
 - Modules recommandés : **ESP32-WROOM-32D**, ou **ESP32-WROOM-32U** si une antenne externe est souhaitée (connecteur IPEX/U.FL déporté plutôt qu'antenne PCB intégrée).
 - **Avant tout achat**, vérifier que l'ordre des broches du module correspond bien à celui identifié sur le socket de la ES32D26 (généralement indiqué par sérigraphie sur la carte). Les fabricants de modules ESP32 ne respectent pas toujours un brochage strictement identique d'un modèle à l'autre.
+
+<img width="282" height="529" alt="image" src="https://github.com/user-attachments/assets/e8b6b069-94cc-49da-9fbf-7accd113ea2a" /><img width="302" height="502" alt="image" src="https://github.com/user-attachments/assets/c22f455e-66fc-411b-8256-c0e3beb18e2a" />
+
+
+
 
 ## Architecture générale
 
@@ -74,9 +87,9 @@ Ce choix persiste à travers les redémarrages du ESP32 et de Home Assistant.
 
 ### Comportement transitoire au démarrage
 
-Un bref clignotement (activation puis désactivation immédiate) peut être observé sur certains relais au moment de la mise sous tension de la carte. Ce comportement est documenté et connu sur les circuits basés sur le 74HC595 : avant que le microcontrôleur n'ait terminé son initialisation et n'impose un état défini sur les broches de contrôle du registre, ce dernier peut se retrouver brièvement dans un état électrique indéterminé (broches de contrôle flottantes, montée progressive de la tension d'alimentation), ce qui peut activer une sortie de façon transitoire avant que le firmware ne prenne le relais.
+Un bref clignotement (activation puis désactivation immédiate) est observé sur tout les relais au moment de la mise sous tension initiale de la carte. Ce comportement est documenté et connu sur les circuits basés sur le 74HC595: avant que le microcontrôleur n'ait terminé son initialisation et n'impose un état défini sur les broches de contrôle du registre, ce dernier peut se retrouver brièvement dans un état électrique indéterminé (broches de contrôle flottantes, montée progressive de la tension d'alimentation), ce qui peut activer une sortie de façon transitoire avant que le firmware ne prenne le relais.
 
-Une solution matérielle existe (résistance de tirage sur la broche de reset du registre ou sur l'Output Enable) mais n'a pas été appliquée dans la version actuelle — le contournement retenu pour l'instant est logiciel, via la stratégie de pré-validation du firmware décrite ci-dessous.
+Une solution de modification matérielle existe (ajout d'une résistance de tirage sur la broche de reset du registre ou sur l'Output Enable) mais n'a pas été appliquée et le contournement logiciel s'avère innéfficace pour contourner ce problème.
 
 ## Entrées numériques
 
@@ -103,6 +116,9 @@ La carte expose 2 canaux de sortie analogique, chacun pouvant fonctionner en ten
 
 Combinaisons possibles selon la position du DIP switch : Vo1+Vo2, Vo1+Io2, Io1+Vo2, Io1+Io2.
 
+<img width="520" height="518" alt="image" src="https://github.com/user-attachments/assets/e50da869-166f-44dd-a047-5bfd15b9e384" />
+
+
 Pour chaque canal, un sélecteur ("Sortie analogique 1/2 - mode d'opération") indique au firmware quelle position occupe réellement le DIP switch, afin d'appliquer la bonne calibration. Un seul contrôle numérique ("Sortie analogique 1/2 %") pilote la sortie de 0 à 100%, peu importe le mode choisi.
 
 ### Calibration
@@ -127,6 +143,7 @@ La carte expose 4 entrées en tension (Vi1-4) et 4 entrées en courant (Ii1-4) :
 ### Limitation matérielle ADC2 / WiFi
 
 Le ESP32 partage son bloc ADC2 avec le pilote WiFi au niveau du silicium : lorsque le WiFi est actif (nécessaire pour la connexion à Home Assistant), les lectures sur les broches ADC2 (Vi1 et Vi3 dans ce cas) échouent de façon systématique, pas seulement occasionnelle. C'est une limitation documentée du ESP32, pas un défaut de ce firmware.
+https://docs.espressif.com/projects/esp-faq/en/latest/software-framework/peripherals/adc.html#when-an-esp32-calling-adc2-get-raw-between-esp-wifi-start-and-esp-wifi-stop-the-read-operation-fails-what-is-the-reason
 
 La solution retenue : Vi1 et Vi3 ne sont plus lus en continu. Un bouton dédié ("Vi1 / Vi3 - Mesure ponctuelle") coupe complètement le WiFi, effectue une lecture fiable sur les deux broches (plus aucun conflit possible), republie les valeurs, puis rétablit la connexion WiFi. L'appareil disparaît quelques secondes de Home Assistant pendant cette opération — c'est un comportement attendu, pas une erreur. Toute commande envoyée à un autre composant (par exemple un relais) pendant cette fenêtre serait perdue, sans réessai automatique.
 
@@ -182,12 +199,12 @@ Deux capteurs de diagnostic exposent la qualité du signal WiFi : la puissance b
 
 Ce firmware utilise les composants standards `api:` (avec chiffrement) et `ota:` (avec mot de passe) d'ESPHome, ainsi qu'un point d'accès de secours WiFi protégé par mot de passe. **Les identifiants et clés ne doivent jamais être commités en clair dans un dépôt public.** Il est fortement recommandé d'utiliser le mécanisme `secrets.yaml` d'ESPHome pour toutes les valeurs sensibles (clé de chiffrement API, mot de passe OTA, identifiants WiFi, mot de passe du point d'accès de secours), et de s'assurer que ce fichier est exclu du contrôle de version (`.gitignore`).
 
-## Problèmes connus et travaux en cours
+## Problèmes connus / travaux en cours / à tester
 
-- **Calibration Ii1 sous 4mA** : la correction à 3 points appliquée à Ii1 reste imprécise pour les valeurs de courant inférieures à environ 4mA. Ceci a une importance limitée en pratique, puisqu'un appareil 4-20mA réel n'envoie normalement jamais un courant sous 4mA en fonctionnement normal (cette plage indique généralement une défaillance de câblage ou de capteur plutôt qu'une valeur mesurée valide) — mais la calibration exacte de cette zone est encore en cours d'ajustement.
+- **Calibration Ii1 sous 4mA** : la correction à 3 points appliquée à Ii1 reste imprécise pour les valeurs de courant inférieures à environ 4mA. Ceci a une importance limitée en pratique, puisqu'un appareil 4-20mA réel n'envoie normalement jamais un courant sous 4mA en fonctionnement normal (cette plage indique généralement une défaillance de câblage ou de capteur plutôt qu'une valeur mesurée valide)  mais la calibration exacte de cette zone est encore en cours d'ajustement.
 - **Ii2, Ii3, Ii4** : n'ont pas encore reçu la même correction de calibration qu'Ii1 (échelle 4-20mA + calibration à 3 points). À faire une fois la méthode validée sur Ii1.
 - **Vi3** : la calibration à 2/3 points n'a pas encore été effectuée sur ce canal (seul Vi1 a été calibré empiriquement jusqu'à présent).
-- **Limitation ADC2/WiFi (Vi1, Vi3)** : non résolue de façon permanente par nature (limitation matérielle du ESP32) — contournée via la mesure ponctuelle par bouton, mais toute lecture continue automatique reste impossible tant que le WiFi est actif.
-- **Clignotement des relais au démarrage** : contourné par une stratégie logicielle (pré-validation du firmware avant installation), sans correction matérielle appliquée à ce jour.
-- **Tension "zone interdite" sur les entrées numériques** : une anomalie électrique a été observée sur les entrées parallèles du registre 74HC165 (tension au repos dans la zone ambiguë CMOS plutôt qu'un niveau logique franc). L'origine exacte (réseau de résistances de tirage) n'a pas été formellement confirmée; cette observation reste à valider si des lectures peu fiables sont constatées sur les entrées numériques.
-- **RS485/Modbus** : infrastructure de base fonctionnelle, mais aucun appareil Modbus spécifique n'a encore été configuré ou testé.
+- **Limitation ADC2/WiFi (Vi1, Vi3)** : non résolue de façon permanente par nature (limitation matérielle du ESP32): contournée via la mesure ponctuelle par bouton, mais toute lecture continue automatique reste impossible tant que le WiFi est actif.
+- **Clignotement des relais au démarrage** : Tentative de contourner par une stratégie logicielle (pré-validation du firmware avant installation), sans correction à ce jour.
+- **Tension "zone interdite" sur les entrées numériques** : une anomalie électrique a été observée sur les entrées parallèles du registre 74HC165 (tension au repos dans la zone ambiguë CMOS plutôt qu'un niveau logique franc, environ 1.6v). L'origine exacte (réseau de résistances de tirage) n'a pas été formellement confirmée; cette observation reste à valider si des lectures peu fiables sont constatées sur les entrées numériques. À confirmer avec nouveau ESP32.
+- **RS485/Modbus** : infrastructure de base fonctionnelle, mais aucun appareil Modbus spécifique n'a encore été configuré ou testé à ce jour.
