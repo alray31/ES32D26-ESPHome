@@ -105,6 +105,9 @@ Les entrées sont exposées comme capteurs binaires (`binary_sensor`) avec logiq
 
 **Note** : sur certains modules ESP32 (notamment certains modèles vendus sous l'appellation "NodeMCU-32S"), une LED bleue embarquée est câblée sur GPIO2. Puisque cette broche sert d'horloge au registre 74HC165, cette LED clignote/scintille en suivant les impulsions d'horloge à chaque lecture des entrées numériques plutôt que d'être contrôlable indépendamment comme LED de statut — il s'agit d'un effet secondaire normal, pas d'un dysfonctionnement.
 
+<img width="457" height="512" alt="image" src="https://github.com/user-attachments/assets/9f5ef276-e1ad-4be7-a611-e317184ec122" />
+
+
 ## Sorties analogiques
 
 La carte expose 2 canaux de sortie analogique, chacun pouvant fonctionner en tension (0-10V) ou en courant (0-20mA), sélectionné physiquement via le DIP switch SW1 de la carte :
