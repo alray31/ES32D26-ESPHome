@@ -103,8 +103,6 @@ Les 8 entrées numériques sont lues via un registre à décalage 74HC165 :
 
 Les entrées sont exposées comme capteurs binaires (`binary_sensor`) avec logique inversée (`inverted: true`), correspondant au comportement natif du registre observé sur cette carte.
 
-**Note de validation matérielle** : GPIO0, GPIO2 et GPIO15 sont des broches de "strapping" sur le ESP32 (impliquées dans le mode de démarrage du module). Un défaut matériel sur un module ESP32 spécifique (GPIO2 court-circuité à la masse) a été rencontré durant le développement, causant une non-fonctionnalité totale du registre d'entrées — ce n'était pas un problème de configuration logicielle mais un défaut physique du module utilisé à ce moment. Il est recommandé de valider le bon fonctionnement du module ESP32 (en particulier ces broches de strapping) avant un déploiement prolongé.
-
 ## Sorties analogiques
 
 La carte expose 2 canaux de sortie analogique, chacun pouvant fonctionner en tension (0-10V) ou en courant (0-20mA), sélectionné physiquement via le DIP switch SW1 de la carte :
@@ -206,5 +204,4 @@ Ce firmware utilise les composants standards `api:` (avec chiffrement) et `ota:`
 - **Vi3** : la calibration à 2/3 points n'a pas encore été effectuée sur ce canal (seul Vi1 a été calibré empiriquement jusqu'à présent).
 - **Limitation ADC2/WiFi (Vi1, Vi3)** : non résolue de façon permanente par nature (limitation matérielle du ESP32): contournée via la mesure ponctuelle par bouton, mais toute lecture continue automatique reste impossible tant que le WiFi est actif.
 - **Clignotement des relais au démarrage** : Tentative de contourner par une stratégie logicielle (pré-validation du firmware avant installation), sans correction à ce jour.
-- **Tension "zone interdite" sur les entrées numériques** : une anomalie électrique a été observée sur les entrées parallèles du registre 74HC165 (tension au repos dans la zone ambiguë CMOS plutôt qu'un niveau logique franc, environ 1.6v). L'origine exacte (réseau de résistances de tirage) n'a pas été formellement confirmée; cette observation reste à valider si des lectures peu fiables sont constatées sur les entrées numériques. À confirmer avec nouveau ESP32.
 - **RS485/Modbus** : infrastructure de base fonctionnelle, mais aucun appareil Modbus spécifique n'a encore été configuré ou testé à ce jour.
